@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kinora — Cinematic AI Video Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   KINORA — design tokens
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08080B;
+  --surface:#0E0E14;
+  --surface-2:#14141C;
+  --surface-3:#1A1A24;
+  --line:rgba(255,255,255,.075);
+  --line-strong:rgba(255,255,255,.15);
+  --text:#EDEDF3;
+  --muted:#8B8B9E;
+  --muted-2:#63637A;
+  --accent:#7C5CFF;
+  --accent-2:#A78BFA;
+  --accent-soft:rgba(124,92,255,.14);
+  --gold:#E9B872;
+  --radius:14px;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+button{font-family:inherit;cursor:pointer}
+::selection{background:rgba(124,92,255,.35)}
+
+/* scrollbars */
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:9px;border:2px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.17);background-clip:padding-box}
+
+/* ============================================================
+   Shell layout
+   ============================================================ */
+#app{
+  display:grid;
+  grid-template-columns:84px minmax(0,1fr) 424px;
+  height:100vh;height:100dvh;
+}
+
+/* ---------------- Left rail ---------------- */
+.rail{
+  background:linear-gradient(180deg,#0B0B11,#08080C);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;
+  padding:16px 0 14px;gap:6px;
+}
+.brand-mark{
+  width:42px;height:42px;border-radius:13px;flex:0 0 auto;
+  background:linear-gradient(140deg,#9A7BFF 0%,#6A45F0 55%,#3E22B8 100%);
+  display:grid;place-items:center;margin-bottom:12px;
+  box-shadow:0 8px 24px -4px rgba(124,92,255,.55),inset 0 1px 0 rgba(255,255,255,.4);
+}
+.brand-mark svg{width:20px;height:20px;fill:#fff}
+.rail-nav{display:flex;flex-direction:column;gap:4px;flex:1;width:100%;align-items:center}
+.rail-btn{
+  width:62px;padding:9px 0 7px;border-radius:12px;border:1px solid transparent;
+  background:transparent;color:var(--muted-2);
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  font-size:9.5px;font-weight:600;letter-spacing:.03em;transition:.18s var(--ease);
+}
+.rail-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.rail-btn:hover{background:rgba(255,255,255,.045);color:var(--muted)}
+.rail-btn.is-active{background:var(--accent-soft);color:#CFC2FF;border-color:rgba(124,92,255,.32)}
+.rail-foot{display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:8px}
+.avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(140deg,#2A2A38,#1A1A24);
+  border:1px solid var(--line-strong);
+  display:grid;place-items:center;font-size:10.5px;font-weight:700;color:var(--muted);
+}
+
+/* ---------------- Stage ---------------- */
+.stage{
+  display:flex;flex-direction:column;min-width:0;min-height:0;
+  padding:16px 20px 0;gap:12px;
+}
+.stage-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:0 0 auto}
+.stage-head h1{font-size:16px;font-weight:700;letter-spacing:-.015em;display:flex;align-items:center;gap:9px}
+.stage-head h1 .k{font-size:10px;font-weight:700;color:#C9BBFF;background:var(--accent-soft);border:1px solid rgba(124,92,255,.3);padding:2px 7px;border-radius:6px;letter-spacing:.08em}
+.stage-head p{font-size:11.5px;color:var(--muted-2);margin-top:2px}
+.head-right{display:flex;align-items:center;gap:8px}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
+  padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);
+  color:var(--muted);white-space:nowrap;
+}
+.pill.accent{color:#CFC2FF;border-color:rgba(124,92,255,.3);background:var(--accent-soft)}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
+.pill .dot.live{background:#4ADE80;box-shadow:0 0 8px rgba(74,222,128,.8)}
+
+.stage-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+
+/* preview */
+.preview-frame{
+  flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.preview-frame::before{
+  content:'';position:absolute;inset:0;border-radius:20px;pointer-events:none;
+  background:radial-gradient(90% 90% at 50% 0%,rgba(124,92,255,.07),transparent 65%);
+}
+.preview{
+  position:relative;border-radius:16px;overflow:hidden;background:#04040A;
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 34px 90px -26px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.02) inset;
+  transition:width .4s var(--ease),height .4s var(--ease);
+  flex:0 0 auto;
+}
+.preview canvas{display:block;width:100%;height:100%}
+.preview::after{ /* subtle inner sheen */
+  content:'';position:absolute;inset:0;pointer-events:none;border-radius:16px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
+}
+
+/* generation scanline */
+.preview.is-generating::before{
+  content:'';position:absolute;left:0;right:0;height:34%;z-index:5;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(124,92,255,.16) 55%,transparent);
+  animation:scan 2.4s linear infinite;
+}
+@keyframes scan{0%{top:-35%}100%{top:100%}}
+
+/* empty state */
+.empty-state{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;text-align:center;padding:24px;z-index:3;
+  background:radial-gradient(70% 70% at 50% 45%,rgba(8,8,14,.35),rgba(4,4,10,.86));
+  backdrop-filter:blur(2px);
+}
+.empty-state.is-on{display:flex}
+.empty-icon{
+  width:52px;height:52px;border-radius:15px;display:grid;place-items:center;
+  background:rgba(124,92,255,.12);border:1px solid rgba(124,92,255,.3);margin-bottom:4px;
+}
+.empty-icon svg{width:22px;height:22px;fill:#B9A6FF}
+.empty-state h3{font-size:14px;font-weight:650;letter-spacing:-.01em}
+.empty-state p{font-size:12px;color:var(--muted-2);max-width:320px;line-height:1.55}
+.empty-badge{
+  font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted-2);border:1px solid var(--line);padding:3px 9px;border-radius:99px;
+}
+
+/* HUD */
+.hud{
+  position:absolute;left:0;right:0;top:0;padding:11px 14px;z-index:4;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  font-size:10px;font-weight:600;letter-spacing:.06em;color:rgba(255,255,255,.62);
+  text-shadow:0 1px 6px rgba(0,0,0,.9);pointer-events:none;
+}
+.hud .hud-chip{
+  background:rgba(6,6,12,.55);border:1px solid rgba(255,255,255,.1);
+  padding:4px 9px;border-radius:7px;backdrop-filter:blur(8px);
+}
+.hud .sim{color:var(--gold);border-color:rgba(233,184,114,.32);background:rgba(233,184,114,.1)}
+
+/* generation overlay */
+.gen-overlay{
+  position:absolute;inset:0;z-index:6;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:26px;background:rgba(4,4,10,.82);backdrop-filter:blur(10px);
+}
+.gen-overlay.is-on{display:flex}
+.gen-kicker{font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#B9A6FF}
+.gen-pct{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.gen-stage{font-size:12px;color:var(--muted);min-height:17px;text-align:center}
+.gen-bar{width:min(340px,84%);height:4px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+.gen-bar i{display:block;height:100%;width:0%;border-radius:4px;background:linear-gradient(90deg,#7C5CFF,#A78BFA 60%,#E9B872);transition:width .12s linear}
+.gen-log{display:flex;flex-direction:column;gap:4px;font-size:10.5px;color:var(--muted-2);font-variant-numeric:tabular-nums;min-height:44px}
+.gen-log div{display:flex;gap:7px;align-items:center;animation:fadeUp .3s var(--ease)}
+.gen-log div::before{content:'✓';color:#4ADE80;font-size:9px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* player bar */
+.player-bar{
+  display:none;align-items:center;gap:12px;padding:9px 14px;flex:0 0 auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:13px;
+}
+.player-bar.is-on{display:flex}
+.icon-btn{
+  width:32px;height:32px;border-radius:9px;border:1px solid var(--line);
+  background:var(--surface-2);color:var(--text);display:grid;place-items:center;transition:.15s;
+}
+.icon-btn:hover{background:var(--surface-3);border-color:var(--line-strong)}
+.icon-btn svg{width:14px;height:14px;fill:currentColor}
+.timeline{
+  flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.1);
+  position:relative;cursor:pointer;
+}
+.timeline::before{content:'';position:absolute;inset:-9px 0;}
+.tl-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:4px;background:linear-gradient(90deg,#7C5CFF,#A78BFA)}
+.tl-head{
+  position:absolute;top:50%;left:0;width:11px;height:11px;border-radius:50%;background:#fff;
+  transform:translate(-50%,-50%);box-shadow:0 0 0 3px rgba(124,92,255,.35);pointer-events:none;
+}
+.tc{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap;letter-spacing:.02em}
+
+/* result actions */
+.result-actions{display:none;flex-wrap:wrap;gap:7px;flex:0 0 auto}
+.result-actions.is-on{display:flex}
+.act-btn{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);
+  font-size:11.5px;font-weight:600;transition:.15s var(--ease);
+}
+.act-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.act-btn:hover{color:var(--text);background:var(--surface-2);border-color:var(--line-strong);transform:translateY(-1px)}
+.act-btn.primary{color:#CFC2FF;background:var(--accent-soft);border-color:rgba(124,92,255,.35)}
+
+/* history strip */
+.history-strip{flex:0 0 auto;border-top:1px solid var(--line);padding:11px 0 14px}
+.history-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.history-head h2{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted-2)}
+.history-head span{font-size:10.5px;color:var(--muted-2)}
+.history-list{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;min-height:60px}
+.history-empty{font-size:11.5px;color:var(--muted-2);display:flex;align-items:center;height:56px}
+.hcard{
+  flex:0 0 auto;width:158px;display:flex;gap:9px;align-items:center;padding:8px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--line);transition:.16s var(--ease);text-align:left;
+}
+.hcard:hover{border-color:rgba(124,92,255,.4);background:var(--surface-2);transform:translateY(-1px)}
+.hthumb{width:44px;height:30px;border-radius:6px;flex:0 0 auto;border:1px solid rgba(255,255,255,.1)}
+.hmeta{min-width:0}
+.hmeta b{display:block;font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hmeta small{display:block;font-size:9.5px;color:var(--muted-2);margin-top:1px;letter-spacing:.02em}
+
+/* ============================================================
+   Right panel
+   ============================================================ */
+.panel{
+  border-left:1px solid var(--line);
+  background:linear-gradient(180deg,#0C0C12,#08080D);
+  display:flex;flex-direction:column;min-height:0;
+}
+.panel-scroll{flex:1;overflow-y:auto;padding:16px 18px 10px;display:flex;flex-direction:column;gap:17px}
+.panel-foot{
+  flex:0 0 auto;padding:13px 18px 16px;border-top:1px solid var(--line);
+  background:rgba(9,9,14,.94);backdrop-filter:blur(12px);
+}
+
+.label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+.field{display:flex;flex-direction:column;gap:8px}
+.field-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mini-btn{
+  background:none;border:none;color:var(--muted-2);font-size:10.5px;font-weight:600;
+  padding:2px 0;transition:.15s;letter-spacing:.02em;
+}
+.mini-btn:hover{color:var(--accent-2)}
+.mini-btn svg{width:11px;height:11px;vertical-align:-1px;stroke:currentColor;fill:none;stroke-width:2;margin-right:3px}
+
+/* mode toggle */
+.mode-toggle{
+  display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;
+}
+.mode-btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 6px;
+  border-radius:9px;border:1px solid transparent;background:transparent;color:var(--muted);
+  font-size:12px;font-weight:600;transition:.18s var(--ease);
+}
+.mode-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.mode-btn:hover{color:var(--text)}
+.mode-btn.is-active{
+  background:linear-gradient(180deg,rgba(124,92,255,.22),rgba(124,92,255,.1));
+  border-color:rgba(124,92,255,.4);color:#D6CBFF;
+  box-shadow:0 4px 16px -6px rgba(124,92,255,.6),inset 0 1px 0 rgba(255,255,255,.1);
+}
+
+/* model card */
+.model-card{
+  display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:12px;
+  background:linear-gradient(140deg,rgba(124,92,255,.13),rgba(124,92,255,.04));
+  border:1px solid rgba(124,92,255,.32);width:100%;text-align:left;transition:.16s var(--ease);
+}
+.model-card:hover{border-color:rgba(124,92,255,.6);background:linear-gradient(140deg,rgba(124,92,255,.2),rgba(124,92,255,.07))}
+.model-badge{
+  width:34px;height:34px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;
+  background:linear-gradient(140deg,#8B6BFF,#5B3CE0);font-size:10px;font-weight:800;color:#fff;
+  letter-spacing:-.02em;box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+}
+.model-info{min-width:0;flex:1}
+.model-name{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+.model-name .tag{
+  font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(74,222,128,.14);color:#6EE7A3;border:1px solid rgba(74,222,128,.3);
+  padding:1px 5px;border-radius:4px;
+}
+.model-desc{font-size:10.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.model-card .chev{width:14px;height:14px;stroke:var(--muted-2);fill:none;stroke-width:2;flex:0 0 auto}
+.adapter-note{
+  display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted-2);padding-left:2px;
+}
+.adapter-note .dot{width:5px;height:5px;border-radius:50%;background:var(--muted-2);flex:0 0 auto}
+
+/* textarea / inputs */
+textarea,input[type=text],input[type=number]{
+  width:100%;background:#0A0A10;border:1px solid var(--line);border-radius:11px;
+  color:var(--text);font-family:inherit;font-size:12.5px;padding:11px 12px;
+  outline:none;transition:.16s var(--ease);line-height:1.55;
+}
+textarea{resize:vertical;min-height:104px}
+textarea::placeholder,input::placeholder{color:#4C4C60}
+textarea:focus,input:focus{border-color:rgba(124,92,255,.6);box-shadow:0 0 0 3px rgba(124,92,255,.12);background:#0B0B13}
+#promptInput{min-height:112px}
+#promptInput.enhanced{min-height:210px;font-size:11.5px;line-height:1.62;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.field-foot{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted-2)}
+
+/* chips */
+.chip-row{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+  border-radius:9px;padding:7px 10px;font-size:11.5px;font-weight:600;transition:.15s var(--ease);
+  white-space:nowrap;letter-spacing:.01em;
+}
+.chip:hover{border-color:var(--line-strong);color:var(--text);background:var(--surface-3)}
+.chip.is-active{
+  background:var(--accent-soft);border-color:rgba(124,92,255,.55);color:#D6CBFF;
+  box-shadow:0 0 0 1px rgba(124,92,255,.16),0 5px 16px -8px rgba(124,92,255,.9);
+}
+.chip-row.cols-6{display:grid;grid-template-columns:repeat(6,1fr)}
+.chip-row.cols-5{display:grid;grid-template-columns:repeat(5,1fr)}
+.chip-row.cols-4{display:grid;grid-template-columns:repeat(4,1fr)}
+.chip-row.cols-3{display:grid;grid-template-columns:repeat(3,1fr)}
+.chip-row.cols-2{display:grid;grid-template-columns:repeat(2,1fr)}
+.chip-row.cols-6 .chip,.chip-row.cols-5 .chip,.chip-row.cols-4 .chip,
+.chip-row.cols-3 .chip,.chip-row.cols-2 .chip{text-align:center;padding:7px 4px}
+
+/* aspect chips */
+.ar-chip{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px !important}
+.ar-box{
+  border:1.5px solid currentColor;border-radius:2px;opacity:.85;
+}
+.ar-chip.is-active .ar-box{opacity:1}
+.ar-chip span{font-size:9.5px;font-weight:700;letter-spacing:.02em}
+
+/* dropzone */
+.dropzone{
+  border:1.5px dashed rgba(255,255,255,.14);border-radius:12px;padding:16px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;
+  background:rgba(255,255,255,.014);transition:.16s var(--ease);cursor:pointer;width:100%;
+}
+.dropzone:hover,.dropzone.is-drag{border-color:rgba(124,92,255,.55);background:rgba(124,92,255,.07)}
+.dropzone svg{width:20px;height:20px;stroke:var(--accent-2);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.dropzone b{font-size:12px;font-weight:600}
+.dropzone small{font-size:10px;color:var(--muted-2)}
+.thumbs{display:flex;flex-wrap:wrap;gap:7px}
+.thumb{position:relative;width:62px;height:62px;border-radius:9px;overflow:hidden;border:1px solid var(--line-strong)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb button{
+  position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;
+  background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.25);color:#fff;
+  font-size:10px;line-height:1;display:grid;place-items:center;padding:0;
+}
+.thumb button:hover{background:#E5484D;border-color:#E5484D}
+.preserve-list{display:flex;flex-direction:column;gap:5px;padding:9px 11px;border-radius:10px;background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.18)}
+.preserve-list div{font-size:10.5px;color:#8FE3B0;display:flex;gap:6px;align-items:center}
+.preserve-list div::before{content:'✓';font-size:9px;font-weight:700}
+
+/* advanced */
+.adv-toggle{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  padding:11px 12px;border-radius:11px;background:var(--surface);border:1px solid var(--line);
+  color:var(--text);font-size:12px;font-weight:650;transition:.16s var(--ease);
+}
+.adv-toggle:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.adv-toggle .chev{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2;transition:transform .22s var(--ease)}
+.adv-toggle.is-open .chev{transform:rotate(180deg)}
+.adv-body{display:none;flex-direction:column;gap:14px;padding-top:2px}
+.adv-body.is-open{display:flex;animation:fadeUp .25s var(--ease)}
+
+/* sliders */
+.slider-row{display:flex;flex-direction:column;gap:6px}
+.slider-head{display:flex;justify-content:space-between;align-items:baseline}
+.slider-head span{font-size:11px;font-weight:600;color:var(--muted)}
+.slider-head b{font-size:10.5px;font-weight:700;color:#C9BBFF;font-variant-numeric:tabular-nums}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;
+  background:rgba(255,255,255,.1);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#fff;
+  border:2.5px solid var(--accent);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.6);
+  transition:transform .12s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+input[type=range]::-moz-range-thumb{
+  width:12px;height:12px;border-radius:50%;background:#fff;border:2.5px solid var(--accent);cursor:pointer;
+}
+
+/* seed row */
+.seed-row{display:flex;gap:7px}
+.seed-row input{flex:1}
+.dice-btn{
+  width:38px;flex:0 0 auto;border-radius:11px;border:1px solid var(--line);background:var(--surface-2);
+  color:var(--muted);display:grid;place-items:center;transition:.15s;
+}
+.dice-btn:hover{color:var(--text);border-color:var(--line-strong);background:var(--surface-3)}
+.dice-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* switch */
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 0}
+.switch-row .sr-txt{font-size:11.5px;font-weight:600;color:var(--muted)}
+.switch-row .sr-sub{font-size:10px;color:var(--muted-2);margin-top:1px}
+.switch{
+  width:38px;height:22px;border-radius:11px;background:rgba(255,255,255,.12);
+  position:relative;border:none;transition:.2s var(--ease);flex:0 0 auto;
+}
+.switch::after{
+  content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:.2s var(--ease);box-shadow:0 1px 4px rgba(0,0,0,.5);
+}
+.switch.is-on{background:linear-gradient(135deg,#7C5CFF,#5B3CE0)}
+.switch.is-on::after{transform:translateX(16px)}
+
+/* generate footer */
+.summary-line{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:10.5px;color:var(--muted-2);margin-bottom:10px;letter-spacing:.01em;
+}
+.summary-line b{color:var(--muted);font-weight:600}
+.generate-btn{
+  width:100%;padding:14px;border-radius:12px;border:none;color:#fff;
+  font-size:14px;font-weight:700;letter-spacing:.01em;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  background:linear-gradient(135deg,#8B6BFF 0%,#6A45F0 55%,#5B3CE0 100%);
+  box-shadow:0 12px 34px -10px rgba(124,92,255,.85),inset 0 1px 0 rgba(255,255,255,.28);
+  transition:.18s var(--ease);position:relative;overflow:hidden;
+}
+.generate-btn:hover:not(:disabled){transform:translateY(-1.5px);box-shadow:0 18px 44px -10px rgba(124,92,255,1),inset 0 1px 0 rgba(255,255,255,.3)}
+.generate-btn:active:not(:disabled){transform:translateY(0)}
+.generate-btn:disabled{opacity:.6;cursor:not-allowed}
+.generate-btn svg{width:16px;height:16px;fill:currentColor}
+.generate-btn .kbd{
+  position:absolute;right:12px;font-size:9.5px;font-weight:600;opacity:.55;
+  border:1px solid rgba(255,255,255,.4);border-radius:4px;padding:1px 5px;
+}
+
+/* ============================================================
+   Toasts & modal
+   ============================================================ */
+.toasts{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;gap:8px;align-items:center;z-index:200;pointer-events:none;
+}
+.toast{
+  display:flex;align-items:center;gap:12px;pointer-events:auto;
+  background:#16161F;border:1px solid var(--line-strong);border-radius:11px;
+  padding:10px 14px;font-size:12.5px;font-weight:500;color:var(--text);
+  box-shadow:0 16px 40px rgba(0,0,0,.7);animation:toastIn .28s var(--ease);
+}
+.toast.out{animation:toastOut .25s var(--ease) forwards}
+.toast button{
+  background:none;border:none;color:var(--accent-2);font-size:12px;font-weight:700;padding:0;
+}
+.toast button:hover{text-decoration:underline}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(8px) scale(.97)}}
+
+.modal{
+  position:fixed;inset:0;z-index:150;display:none;place-items:center;padding:24px;
+  background:rgba(0,0,0,.72);backdrop-filter:blur(7px);
+}
+.modal.is-open{display:grid}
+.modal-card{
+  width:min(660px,100%);max-height:82vh;overflow:auto;
+  background:linear-gradient(180deg,#101018,#0B0B12);
+  border:1px solid var(--line-strong);border-radius:18px;padding:26px 26px 22px;
+  box-shadow:0 40px 100px -20px rgba(0,0,0,.95);animation:modalIn .25s var(--ease);
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.modal-card h2{font-size:17px;font-weight:750;letter-spacing:-.02em;margin-bottom:4px}
+.modal-card .sub{font-size:12px;color:var(--muted-2);margin-bottom:20px}
+.modal-close{
+  position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:8px;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+  display:grid;place-items:center;font-size:15px;line-height:1;
+}
+.modal-close:hover{background:var(--surface-3);color:var(--text)}
+.modal-card{position:relative}
+.mrow{
+  display:flex;align-items:center;gap:12px;padding:13px;border-radius:12px;
+  border:1px solid var(--line);background:var(--surface);margin-bottom:9px;
+}
+.mrow.disabled{opacity:.5}
+.mrow .badge{
+  width:36px;height:36px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;
+  font-size:10px;font-weight:800;background:linear-gradient(140deg,#8B6BFF,#5B3CE0);color:#fff;
+}
+.mrow.disabled .badge{background:linear-gradient(140deg,#2A2A38,#1C1C26);color:var(--muted-2)}
+.mrow .mrow-txt{flex:1;min-width:0}
+.mrow .mrow-txt b{font-size:13px;font-weight:700;display:block}
+.mrow .mrow-txt small{font-size:11px;color:var(--muted-2);display:block;margin-top:2px}
+.mrow .tag{
+  font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:5px;
+}
+.tag.ok{background:rgba(74,222,128,.14);color:#6EE7A3;border:1px solid rgba(74,222,128,.3)}
+.tag.off{background:rgba(255,255,255,.05);color:var(--muted-2);border:1px solid var(--line)}
+.note{
+  font-size:11.5px;line-height:1.65;color:var(--muted);padding:14px 16px;border-radius:12px;
+  background:rgba(233,184,114,.06);border:1px solid rgba(233,184,114,.22);
+}
+.note b{color:#F0C98A}
+.note code{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#E9B872}
+.proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.proj{
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);
+  transition:.15s var(--ease);cursor:pointer;text-align:left;
+}
+.proj:hover{border-color:rgba(124,92,255,.4);transform:translateY(-2px)}
+.proj .pthumb{height:72px}
+.proj .pmeta{padding:9px 11px}
+.proj .pmeta b{font-size:11.5px;display:block}
+.proj .pmeta small{font-size:10px;color:var(--muted-2)}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width:1180px){
+  #app{grid-template-columns:72px minmax(0,1fr) 380px}
+  .rail-btn{width:56px}
+}
+@media (max-width:980px){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;height:auto;min-height:100vh}
+  .rail{flex-direction:row;justify-content:flex-start;padding:10px 14px;border-right:none;border-bottom:1px solid var(--line);gap:4px;overflow-x:auto}
+  .brand-mark{margin-bottom:0;margin-right:8px;width:34px;height:34px;border-radius:10px}
+  .rail-nav{flex-direction:row;flex:1}
+  .rail-foot{display:none}
+  .rail-btn{width:auto;padding:8px 10px;flex-direction:row;gap:6px;font-size:11px}
+  .rail-btn span{display:none}
+  .stage{padding:14px;min-height:60vh}
+  .preview-frame{min-height:280px}
+  body{overflow:auto}
+  .panel{border-left:none;border-top:1px solid var(--line)}
+  .panel-scroll{max-height:none;overflow:visible}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ================= LEFT RAIL ================= -->
+  <nav class="rail">
+    <div class="brand-mark" title="Kinora Studio">
+      <svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg>
+    </div>
+    <div class="rail-nav">
+      <button class="rail-btn is-active" data-nav="studio" title="Studio">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>
+        <span>Studio</span>
+      </button>
+      <button class="rail-btn" data-nav="history" title="History">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        <span>History</span>
+      </button>
+      <button class="rail-btn" data-nav="projects" title="Projects">
+        <svg viewBox="0 0 24 24"><path d="M3 7.5a2 2 0 0 1 2-2h3.6l1.8 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-10Z"/></svg>
+        <span>Projects</span>
+      </button>
+      <button class="rail-btn" data-nav="models" title="Models">
+        <svg viewBox="0 0 24 24"><path d="M12 3 3 7.5 12 12l9-4.5L12 3Z"/><path d="m3 12 9 4.5L21 12"/><path d="m3 16.5 9 4.5 9-4.5"/></svg>
+        <span>Models</span>
+      </button>
+      <button class="rail-btn" data-nav="about" title="About">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r=".7" fill="currentColor" stroke="none"/></svg>
+        <span>About</span>
+      </button>
+    </div>
+    <div class="rail-foot">
+      <div class="avatar">K</div>
+    </div>
+  </nav>
+
+  <!-- ================= STAGE ================= -->
+  <main class="stage">
+    <header class="stage-head">
+      <div>
+        <h1>Studio <span class="k">BETA</span></h1>
+        <p>Text to video · Image to video · up to 30 seconds</p>
+      </div>
+      <div class="head-right">
+        <span class="pill accent"><span class="dot live"></span> Seedance 2.5</span>
+        <span class="pill"><span class="dot"></span> Simulated render</span>
+      </div>
+    </header>
+
+    <div class="stage-body">
+      <div class="preview-frame" id="previewFrame">
+        <div class="preview" id="preview">
+          <canvas id="canvas"></canvas>
+
+          <div class="hud" id="hud">
+            <span class="hud-chip">SEEDANCE 2.5 · <span id="hudSpec">16:9 · 1080p · 10s</span></span>
+            <span class="hud-chip sim">SIMULATED PREVIEW</span>
+          </div>
+
+          <div class="empty-state is-on" id="emptyState">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg>
+            </div>
+            <div class="empty-badge">No render yet</div>
+            <h3>Your canvas is empty</h3>
+            <p>Describe a scene on the right, or upload a reference image to animate, then press Generate.</p>
+          </div>
+
+          <div class="gen-overlay" id="genOverlay">
+            <div class="gen-kicker">Rendering</div>
+            <div class="gen-pct" id="genPct">0%</div>
+            <div class="gen-stage" id="genStage">Preparing</div>
+            <div class="gen-bar"><i id="genBar"></i></div>
+            <div class="gen-log" id="genLog"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="player-bar" id="playerBar">
+        <button class="icon-btn" id="playBtn" title="Play / Pause">
+          <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg>
+        </button>
+        <div class="timeline" id="timeline">
+          <div class="tl-fill" id="tlFill"></div>
+          <div class="tl-head" id="tlHead"></div>
+        </div>
+        <div class="tc" id="timecode">00:00 / 00:10</div>
+      </div>
+
+      <div class="result-actions" id="resultActions">
+        <button class="act-btn primary" data-act="regenerate">
+          <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 6.3"/><path d="M20 4v7h-7"/></svg> Regenerate
+        </button>
+        <button class="act-btn" data-act="edit">
+          <svg viewBox="0 0 24 24"><path d="M4 20h4L20 8l-4-4L4 16v4Z"/></svg> Edit Prompt
+        </button>
+        <button class="act-btn" data-act="extend">
+          <svg viewBox="0 0 24 24"><path d="M4 12h13"/><path d="m13 7 5 5-5 5"/><path d="M20 5v14"/></svg> Extend
+        </button>
+        <button class="act-btn" data-act="variation">
+          <svg viewBox="0 0 24 24"><path d="M4 7h6v6"/><path d="M4 13a8 8 0 0 0 13 5"/><path d="M20 17h-6v-6"/><path d="M20 11A8 8 0 0 0 7 6"/></svg> Create Variation
+        </button>
+        <button class="act-btn" data-act="download">
+          <svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg> Download
+        </button>
+        <button class="act-btn" data-act="another">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Generate Another
+        </button>
+      </div>
+    </div>
+
+    <div class="history-strip" id="historyStrip">
+      <div class="history-head">
+        <h2>Recent renders &amp; projects</h2>
+        <span id="historyCount">0 renders</span>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="history-empty">Nothing yet — your first render will appear here.</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= RIGHT PANEL ================= -->
+  <aside class="panel">
+    <div class="panel-scroll">
+
+      <!-- MODE -->
+      <div class="mode-toggle" id="modeToggle">
+        <button class="mode-btn is-active" data-mode="text">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h11"/><path d="M4 18h7"/></svg>
+          Text to Video
+        </button>
+        <button class="mode-btn" data-mode="image">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5"/></svg>
+          Image to Video
+        </button>
+      </div>
+
+      <!-- MODEL -->
+      <section class="field">
+        <div class="field-head">
+          <span class="label">Model</span>
+          <button class="mini-btn" data-nav="models">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r=".7" fill="currentColor" stroke="none"/></svg>
+            Details
+          </button>
+        </div>
+        <button class="model-card" data-nav="models">
+          <div class="model-badge">S2.5</div>
+          <div class="model-info">
+            <div class="model-name">Seedance 2.5 <span class="tag">Primary</span></div>
+            <div class="model-desc">Cinematic T2V + I2V · up to 30s · 1080p</div>
+          </div>
+          <svg class="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+        <div class="adapter-note"><span class="dot"></span> Adapter slot ready for additional models</div>
+      </section>
+
+      <!-- PROMPT -->
+      <section class="field">
+        <div class="field-head">
+          <span class="label">Prompt</span>
+          <button class="mini-btn" id="enhanceBtn">
+            <svg viewBox="0 0 24 24"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/><path d="M18.5 15.5 19.4 18l2.5.9-2.5.9-.9 2.5-.9-2.5-2.5-.9 2.5-.9.9-2.5Z"/></svg>
+            Enhance
+          </button>
+        </div>
+        <textarea id="promptInput" placeholder="Describe the scene: subject, action, environment, mood…"></textarea>
+        <div class="field-foot">
+          <span id="charCount">0 / 2000</span>
+          <span id="promptMode">Text to Video</span>
+        </div>
+      </section>
+
+      <!-- REFERENCE IMAGE -->
+      <section class="field">
+        <div class="field-head">
+          <span class="label" id="uploadLabel">Reference image</span>
+          <span style="font-size:10px;color:var(--muted-2)" id="uploadHint">optional · guides style</span>
+        </div>
+        <div class="thumbs" id="thumbs"></div>
+        <div class="dropzone" id="dropzone">
+          <svg viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg>
+          <b>Drop images or click to upload</b>
+          <small>PNG, JPG, WEBP · up to 10 images</small>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" multiple hidden />
+        <div class="preserve-list" id="preserveList" style="display:none">
+          <div>Subject identity &amp; facial structure</div>
+          <div>Clothing, hairstyle &amp; accessories</div>
+          <div>Environment, objects &amp; composition</div>
+          <div>No unnecessary redesign — animate only what is asked</div>
+        </div>
+      </section>
+
+      <!-- DURATION -->
+      <section class="field">
+        <div class="field-head">
+          <span class="label">Duration</span>
+          <span style="font-size:10px;color:var(--muted-2)">max 30s</span>
+        </div>
+        <div class="chip-row cols-6" id="durationRow">
+          <button class="chip" data-dur="5">5s</button>
+          <button class="chip is-active" data-dur="10">10s</button>
+          <button class="chip" data-dur="15">15s</button>
+          <button class="chip" data-dur="20">20s</button>
+          <button class="chip" data-dur="25">25s</button>
+          <button class="chip" data-dur="30">30s</button>
+        </div>
+        <div class="field-foot"><span id="durationHint">Single continuous take</span></div>
+      </section>
+
+      <!-- ASPECT RATIO -->
+      <section class="field">
+        <span class="label">Aspect ratio</span>
+        <div class="chip-row cols-5" id="aspectRow">
+          <button class="chip ar-chip is-active" data-ar="16:9"><i class="ar-box" style="width:22px;height:12px"></i><span>16:9</span></button>
+          <button class="chip ar-chip" data-ar="9:16"><i class="ar-box" style="width:12px;height:21px"></i><span>9:16</span></button>
+          <button class="chip ar-chip" data-ar="1:1"><i class="ar-box" style="width:17px;height:17px"></i><span>1:1</span></button>
+          <button class="chip ar-chip" data-ar="4:3"><i class="ar-box" style="width:20px;height:15px"></i><span>4:3</span></button>
+          <button class="chip ar-chip" data-ar="21:9"><i class="ar-box" style="width:24px;height:10px"></i><span>21:9</span></button>
+        </div>
+      </section>
+
+      <!-- RESOLUTION -->
+      <section class="field">
+        <div class="field-head">
+          <span class="label">Resolution</span>
+          <span style="font-size:10px;color:var(--muted-2)">Seedance 2.5 · up to 1080p</span>
+        </div>
+        <div class="chip-row cols-3" id="resRow">
+          <button class="chip" data-res="480p">480p</button>
+          <button class="chip" data-res="720p">720p</button>
+          <button class="chip is-active" data-res="1080p">1080p</button>
+        </div>
+      </section>
+
+      <!-- CAMERA -->
+      <section class="field">
+        <span class="label">Camera</span>
+        <div class="chip-row cols-2" id="cameraRow">
+          <button class="chip is-active" data-cam="Static">Static</button>
+          <button class="chip" data-cam="Push In">Push In</button>
+          <button class="chip" data-cam="Pull Out">Pull Out</button>
+          <button class="chip" data-cam="Pan Left">Pan Left</button>
+          <button class="chip" data-cam="Pan Right">Pan Right</button>
+          <button class="chip" data-cam="Tilt Up">Tilt Up</button>
+          <button class="chip" data-cam="Tilt Down">Tilt Down</button>
+          <button class="chip" data-cam="Orbit">Orbit</button>
+          <button class="chip" data-cam="Tracking">Tracking</button>
+          <button class="chip" data-cam="Dolly">Dolly</button>
+          <button class="chip" data-cam="Crane">Crane</button>
+          <button class="chip" data-cam="Handheld">Handheld</button>
+          <button class="chip" data-cam="Zoom">Zoom</button>
+          <button class="chip" data-cam="Rack Focus">Rack Focus</button>
+        </div>
+      </section>
+
+      <!-- MOTION -->
+      <section class="field">
+        <span class="label">Motion intensity</span>
+        <div class="chip-row cols-4" id="motionRow">
+          <button class="chip" data-motion="Low">Low</button>
+          <button class="chip is-active" data-motion="Medium">Medium</button>
+          <button class="chip" data-motion="High">High</button>
+          <button class="chip" data-motion="Custom">Custom</button>
+        </div>
+        <div class="slider-row" id="customMotionRow" style="display:none;margin-top:2px">
+          <div class="slider-head"><span>Custom motion strength</span><b id="customMotionVal">55</b></div>
+          <input type="range" min="0" max="100" value="55" id="customMotion" />
+        </div>
+      </section>
+
+      <!-- STYLE -->
+      <section class="field">
+        <span class="label">Style</span>
+        <div class="chip-row" id="styleRow">
+          <button class="chip is-active" data-style="Cinematic">Cinematic</button>
+          <button class="chip" data-style="Photorealistic">Photorealistic</button>
+          <button class="chip" data-style="Animation">Animation</button>
+          <button class="chip" data-style="Anime">Anime</button>
+          <button class="chip" data-style="3D">3D</button>
+          <button class="chip" data-style="Documentary">Documentary</button>
+          <button class="chip" data-style="Music Video">Music Video</button>
+          <button class="chip" data-style="Commercial">Commercial</button>
+          <button class="chip" data-style="Fantasy">Fantasy</button>
+          <button class="chip" data-style="Sci-Fi">Sci-Fi</button>
+        </div>
+      </section>
+
+      <!-- LIGHTING -->
+      <section class="field">
+        <span class="label">Lighting</span>
+        <div class="chip-row" id="lightRow">
+          <button class="chip is-active" data-light="Natural">Natural</button>
+          <button class="chip" data-light="Golden Hour">Golden Hour</button>
+          <button class="chip" data-light="Studio">Studio</button>
+          <button class="chip" data-light="Dramatic">Dramatic</button>
+          <button class="chip" data-light="Neon">Neon</button>
+          <button class="chip" data-light="Low Light">Low Light</button>
+          <button class="chip" data-light="Volumetric">Volumetric</button>
+        </div>
+      </section>
+
+      <!-- ADVANCED -->
+      <section class="field">
+        <button class="adv-toggle" id="advToggle">
+          <span>Advanced settings</span>
+          <svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+
+        <div class="adv-body" id="advBody">
+
+          <div class="field">
+            <span class="label">Seed</span>
+            <div class="seed-row">
+              <input type="number" id="seedInput" value="482913" min="0" max="999999" />
+              <button class="dice-btn" id="seedDice" title="Randomize seed">
+                <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.1" fill="currentColor" stroke="none"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-head"><span>Creativity</span><b data-val="creativity">62</b></div>
+            <input type="range" min="0" max="100" value="62" data-slider="creativity" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>Motion strength</span><b data-val="motionStrength">55</b></div>
+            <input type="range" min="0" max="100" value="55" data-slider="motionStrength" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>Camera strength</span><b data-val="cameraStrength">50</b></div>
+            <input type="range" min="0" max="100" value="50" data-slider="cameraStrength" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>Prompt adherence</span><b data-val="adherence">72</b></div>
+            <input type="range" min="0" max="100" value="72" data-slider="adherence" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>Character consistency</span><b data-val="character">85</b></div>
+            <input type="range" min="0" max="100" value="85" data-slider="character" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>Reference-image strength</span><b data-val="refStrength">78</b></div>
+            <input type="range" min="0" max="100" value="78" data-slider="refStrength" />
+          </div>
+
+          <div class="field">
+            <span class="label">Negative prompt</span>
+            <textarea id="negativeInput" style="min-height:88px;font-size:11px;line-height:1.55"></textarea>
+            <div class="field-foot"><span>Applied globally to every render</span></div>
+          </div>
+
+          <div class="field">
+            <span class="label">Frame rate</span>
+            <div class="chip-row cols-3" id="fpsRow">
+              <button class="chip is-active" data-fps="24">24 fps</button>
+              <button class="chip" data-fps="30">30 fps</button>
+              <button class="chip" data-fps="60">60 fps</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="label">Quality</span>
+            <div class="chip-row cols-4" id="qualityRow">
+              <button class="chip" data-quality="Draft">Draft</button>
+              <button class="chip" data-quality="Standard">Standard</button>
+              <button class="chip is-active" data-quality="High">High</button>
+              <button class="chip" data-quality="Ultra">Ultra</button>
+            </div>
+          </div>
+
+          <div class="switch-row">
+            <div>
+              <div class="sr-txt">Generate audio</div>
+              <div class="sr-sub">Ambient bed &amp; foley (if supported)</div>
+            </div>
+            <button class="switch is-on" id="audioSwitch" aria-label="Toggle audio"></button>
+          </div>
+
+          <div class="field">
+            <span class="label">Sequence tools</span>
+            <div class="chip-row cols-2">
+              <button class="chip" data-tool="extend">Extend video</button>
+              <button class="chip" data-tool="continue">Continue scene</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- FOOT -->
+    <div class="panel-foot">
+      <div class="summary-line">
+        <span><b>Seedance 2.5</b> · <span id="sumSpec">16:9 · 1080p · 10s</span></span>
+        <span id="sumMeta">24 fps · High</span>
+      </div>
+      <button class="generate-btn" id="generateBtn">
+        <svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5z"/></svg>
+        <span id="generateLabel">Generate</span>
+        <span class="kbd">⌘↵</span>
+      </button>
+    </div>
+  </aside>
+</div>
+
+<!-- toasts -->
+<div class="toasts" id="toasts"></div>
+
+<!-- modal -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   KINORA — interface demo
+   ----------------------------------------------------------------------------
+   All rendering is simulated locally in the browser. No network request is
+   made, and no proprietary model endpoint is represented. "Seedance 2.5" is a
+   model slot in the adapter layer; wire it to a live integration only when an
+   authorized API is actually available to you.
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  /* ------------------------------------------------------------------ *
+   * Constants
+   * ------------------------------------------------------------------ */
+  const DEFAULT_NEGATIVE =
+    'flickering, unstable character identity, distorted face, malformed hands, ' +
+    'extra fingers, missing fingers, duplicated objects, sudden clothing changes, ' +
+    'background morphing, unnatural movement, floating objects, inconsistent lighting, ' +
+    'camera artifacts, unwanted scene changes, text artifacts, watermark';
+
+  const PALETTES = {
+    'Cinematic':     ['#0a1622', '#1b2f3a', '#e8a44c', '#3d7a8a', '#7fd4c1'],
+    'Photorealistic':['#0d1117', '#2a2f38', '#e6d3b3', '#5a6b7a', '#c9d6df'],
+    'Animation':     ['#1a1030', '#3b1e5c', '#ff9de2', '#6f5cff', '#ffd166'],
+    'Anime':         ['#0f1a3a', '#2a2f6b', '#ff7eb6', '#4fd1ff', '#ffe066'],
+    '3D':            ['#0b0f1c', '#1d2740', '#8ab4ff', '#b07cff', '#59e0c5'],
+    'Documentary':   ['#12100c', '#2b2620', '#d8c9a8', '#6b6455', '#a89c80'],
+    'Music Video':   ['#12001a', '#2a0040', '#ff2e88', '#00e5ff', '#b14aff'],
+    'Commercial':    ['#0f1418', '#1f2a33', '#ffffff', '#66b3ff', '#ffd1a1'],
+    'Fantasy':       ['#0a1a14', '#123a2c', '#8ef0b0', '#c9a24a', '#7fd4ff'],
+    'Sci-Fi':        ['#050b14', '#0f2033', '#00d9ff', '#7c5cff', '#ff4d8d']
+  };
+
+  const CAMERA_TEXT = {
+    'Static':     'Locked-off tripod; zero drift, no handheld sway, perfectly stable frame',
+    'Push In':    'Slow motorized dolly push-in toward the subject, eased start and stop',
+    'Pull Out':   'Smooth dolly pull-back that reveals the wider environment',
+    'Pan Left':   'Constant-speed horizontal pan to the left on a fluid head',
+    'Pan Right':  'Constant-speed horizontal pan to the right on a fluid head',
+    'Tilt Up':    'Vertical tilt upward, revealing height, architecture and sky',
+    'Tilt Down':  'Vertical tilt downward, settling gently on the subject',
+    'Orbit':      '180-degree arc orbit around the subject at a constant radius',
+    'Tracking':   'Lateral tracking shot matching the subject’s pace, grounded and level',
+    'Dolly':      'Parallel dolly move alongside the subject, smooth and linear',
+    'Crane':      'Crane rise from ground level to an elevated wide, single continuous move',
+    'Handheld':   'Organic handheld with micro-shake and natural breathing motion',
+    'Zoom':       'Optical zoom, smooth and linear, no digital artifacts',
+    'Rack Focus': 'Rack focus between foreground and background planes with a soft falloff'
+  };
+
+  const LIGHT_TEXT = {
+    'Natural':     'soft ambient daylight, gentle shadow falloff, neutral white balance',
+    'Golden Hour': 'warm low-angle sun, long shadows, honeyed highlights, soft haze',
+    'Studio':      'controlled three-point lighting, soft key, clean falloff, crisp catchlights',
+    'Dramatic':    'high-contrast chiaroscuro, deep shadows, single hard key from the side',
+    'Neon':        'saturated practical neon sources, colored rim light, wet reflections',
+    'Low Light':   'available-light night, lifted blacks, natural noise floor, practical sources',
+    'Volumetric':  'visible light shafts, atmospheric haze, god rays, deep atmospheric perspective'
+  };
+
+  const TOD_TEXT = {
+    'Natural': 'Late afternoon', 'Golden Hour': 'Sunset / golden hour',
+    'Studio': 'Controlled interior (time-agnostic)', 'Dramatic': 'Night or shuttered interior',
+    'Neon': 'Night', 'Low Light': 'Night', 'Volumetric': 'Dawn or dusk'
+  };
+
+  const ART_TEXT = {
+    'Cinematic':     'Filmic teal-and-amber grade, gentle halation, wide-gamut highlight rolloff',
+    'Photorealistic':'True-to-life color science, natural skin tones, minimal grade, no stylization',
+    'Animation':     'Stylized shapes, expressive squash-and-stretch, painterly shading',
+    'Anime':         'Cel-shaded, bold linework, saturated palette, speed lines on fast motion',
+    '3D':            'Physically-based render, subsurface scattering, clean global illumination',
+    'Documentary':   'Available-light realism, muted grade, observational framing',
+    'Music Video':   'High-contrast stylized grade, rhythmic energy, bold color blocking',
+    'Commercial':    'Clean, bright, product-hero lighting, crisp contrast, immaculate surfaces',
+    'Fantasy':       'Rich saturated palette, ethereal glow, painterly atmospheric depth',
+    'Sci-Fi':        'Cool cyan/magenta grade, practical holographics, deep atmospheric haze'
+  };
+
+  const ASPECT_COMP = {
+    '16:9': 'Wide landscape framing, subject on a third, generous headroom, deep background',
+    '9:16': 'Vertical portrait framing, subject centered, negative space above, mobile-first',
+    '1:1':  'Square framing, centered subject, balanced negative space on all sides',
+    '4:3':  'Classic academy framing, naturalistic composition, comfortable headroom',
+    '21:9': 'Ultra-wide anamorphic framing, strong horizontal staging, wide negative space'
+  };
+
+  /* ------------------------------------------------------------------ *
+   * State
+   * ------------------------------------------------------------------ */
+  const state = {
+    mode: 'text',
+    prompt: '',
+    images: [],
+    duration: 10,
+    aspect: '16:9',
+    resolution: '1080p',
+    camera: 'Static',
+    motion: 'Medium',
+    style: 'Cinematic',
+    lighting: 'Natural',
+    fps: 24,
+    quality: 'High',
+    audio: true,
+    adv: {
+      seed: 482913,
+      creativity: 62,
+      motionStrength: 55,
+      cameraStrength: 50,
+      adherence: 72,
+      character: 85,
+      refStrength: 78,
+      negative: DEFAULT_NEGATIVE
+    },
+    status: 'idle', // idle | generating | done
+    progress: 0
+  };
+
+  const history = [];
+
+  /* ------------------------------------------------------------------ *
+   * DOM refs
+   * ------------------------------------------------------------------ */
+  const previewEl   = $('#preview');
+  const previewFrame= $('#previewFrame');
+  const canvas      = $('#canvas');
+  const ctx         = canvas.getContext('2d');
+  const promptInput = $('#promptInput');
+  const negativeInput = $('#negativeInput');
+  const generateBtn = $('#generateBtn');
+  const generateLabel = $('#generateLabel');
+
+  /* ------------------------------------------------------------------ *
+   * Canvas / player
+   * ------------------------------------------------------------------ */
+  let viewW = 800, viewH = 450, dpr = 1;
+  let ambient = 0;
+  let playhead = 0;
+  let playing = false;
+  let last = performance.now();
+  let noisePattern = null;
+
+  function makeNoise() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const x = c.getContext('2d');
+    const img = x.createImageData(128, 128);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = (Math.random() * 255) | 0;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 26;
+    }
+    x.putImageData(img, 0, 0);
+    return c;
+  }
+  const noiseCanvas = makeNoise();
+
+  function layoutPreview() {
+    const W = previewFrame.clientWidth;
+    const H = previewFrame.clientHeight;
+    if (!W || !H) return;
+
+    const [aw, ah] = state.aspect.split(':').map(Number);
+    const ratio = aw / ah;
+
+    let w = W, h = W / ratio;
+    if (h > H) { h = H; w = H * ratio; }
+
+    previewEl.style.width = Math.floor(w) + 'px';
+    previewEl.style.height = Math.floor(h) + 'px';
+
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    viewW = Math.max(1, Math.floor(w));
+    viewH = Math.max(1, Math.floor(h));
+
+    canvas.width = Math.floor(viewW * dpr);
+    canvas.height = Math.floor(viewH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    draw(performance.now());
+  }
+
+  function hexToRgba(hex, a) {
+    const h = hex.replace('#', '');
+    const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+
+  function draw(now) {
+    const W = viewW, H = viewH;
+    if (!W || !H) return;
+
+    const active = state.status === 'done';
+    const t = active ? playhead : ambient * 0.55;
+    const dur = Math.max(1, state.duration);
+    const p = active ? Math.min(1, t / dur) : 0;
+
+    const pal = PALETTES[state.style] || PALETTES.Cinematic;
+
+    ctx.clearRect(0, 0, W, H);
+
+    /* --- camera transform --- */
+    let scale = 1, tx = 0, ty = 0;
+    const camStrength = state.adv.cameraStrength / 100;
+    switch (state.camera) {
+      case 'Push In':   scale = 1 + 0.20 * p * camStrength; break;
+      case 'Pull Out':  scale = 1.20 - 0.20 * p * camStrength; break;
+      case 'Pan Left':  tx = -0.13 * W * p * camStrength; break;
+      case 'Pan Right': tx =  0.13 * W * p * camStrength; break;
+      case 'Tilt Up':   ty =  0.13 * H * p * camStrength; break;
+      case 'Tilt Down': ty = -0.13 * H * p * camStrength; break;
+      case 'Orbit':     tx = Math.sin(p * Math.PI * 2) * 0.10 * W * camStrength; break;
+      case 'Tracking':  tx = Math.sin(p * Math.PI) * 0.11 * W * camStrength; break;
+      case 'Dolly':     scale = 1 + 0.10 * Math.sin(p * Math.PI) * camStrength; break;
+      case 'Crane':     ty = -0.12 * H * p * camStrength; scale = 1 - 0.07 * p * camStrength; break;
+      case 'Handheld':  tx = Math.sin(t * 9.1) * 2.4 * camStrength; ty = Math.cos(t * 7.3) * 2.0 * camStrength; break;
+      case 'Zoom':      scale = 1 + 0.28 * p * camStrength; break;
+      case 'Rack Focus': scale = 1 + 0.04 * Math.sin(p * Math.PI); break;
+    }
+
+    ctx.save();
+    ctx.translate(W / 2 + tx, H / 2 + ty);
+    ctx.scale(scale, scale);
+    ctx.translate(-W / 2, -H / 2);
+
+    /* --- base gradient --- */
+    const bg = ctx.createLinearGradient(-W * 0.3, -H * 0.3, W * 1.1, H * 1.1);
+    bg.addColorStop(0, pal[0]);
+    bg.addColorStop(0.55, pal[1]);
+    bg.addColorStop(1, pal[0]);
+    ctx.fillStyle = bg;
+    ctx.fillRect(-W * 0.4, -H * 0.4, W * 1.8, H * 1.8);
+
+    /* --- light blobs --- */
+    ctx.globalCompositeOperation = 'lighter';
+    const blobs = [
+      { c: pal[2], ax: 0.34, ay: 0.26, sx: 0.30, sy: 0.22, px: 0.0, py: 1.4, r: 0.62, a: 0.50 },
+      { c: pal[3], ax: 0.38, ay: 0.22, sx: 0.19, sy: 0.27, px: 2.1, py: 0.3, r: 0.55, a: 0.42 },
+      { c: pal[4], ax: 0.30, ay: 0.30, sx: 0.24, sy: 0.17, px: 4.2, py: 3.0, r: 0.48, a: 0.34 }
+    ];
+    for (const b of blobs) {
+      const x = W * (0.5 + b.ax * Math.sin(t * b.sx + b.px));
+      const y = H * (0.5 + b.ay * Math.cos(t * b.sy + b.py));
+      const r = Math.min(W, H) * b.r * (1 + 0.08 * Math.sin(t * 0.7 + b.px));
+      const rg = ctx.createRadialGradient(x, y, 0, x, y, Math.max(1, r));
+      rg.addColorStop(0, hexToRgba(b.c, b.a));
+      rg.addColorStop(0.55, hexToRgba(b.c, b.a * 0.32));
+      rg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(-W * 0.4, -H * 0.4, W * 1.8, H * 1.8);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    ctx.restore();
+
+    /* --- lighting tint --- */
+    const TINTS = {
+      'Natural': 'rgba(180,200,220,0.05)', 'Golden Hour': 'rgba(255,170,80,0.16)',
+      'Studio': 'rgba(255,255,255,0.05)', 'Dramatic': 'rgba(0,0,0,0.22)',
+      'Neon': 'rgba(255,60,180,0.13)', 'Low Light': 'rgba(10,14,30,0.28)',
+      'Volumetric': 'rgba(200,220,255,0.10)'
+    };
+    ctx.fillStyle = TINTS[state.lighting] || 'transparent';
+    ctx.fillRect(0, 0, W, H);
+
+    /* --- vignette --- */
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.18, W / 2, H / 2, Math.max(W, H) * 0.78);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(0.7, 'rgba(0,0,0,0.28)');
+    vg.addColorStop(1, 'rgba(0,0,0,0.78)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+    /* --- grain --- */
+    if (!noisePattern) noisePattern = ctx.createPattern(noiseCanvas, 'repeat');
+    if (noisePattern) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.translate(-Math.random() * 128, -Math.random() * 128);
+      ctx.fillStyle = noisePattern;
+      ctx.fillRect(0, 0, W + 128, H + 128);
+      ctx.restore();
+    }
+
+    /* --- idle dim --- */
+    if (state.status === 'idle') {
+      ctx.fillStyle = 'rgba(6,6,12,0.35)';
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function loop(now) {
+    const dt = Math.min(0.06, (now - last) / 1000);
+    last = now;
+    ambient += dt;
+
+    if (playing) {
+      playhead += dt;
+      if (playhead >= state.duration) {
+        playhead = state.duration;
+        playing = false;
+        syncPlayIcon();
+      }
+      updateTransport();
+    }
+    draw(now);
+    requestAnimationFrame(loop);
+  }
+
+  function fmtTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+
+  function updateTransport() {
+    const pct = (playhead / Math.max(1, state.duration)) * 100;
+    $('#tlFill').style.width = pct + '%';
+    $('#tlHead').style.left = pct + '%';
+    $('#timecode').textContent = fmtTime(playhead) + ' / ' + fmtTime(state.duration);
+  }
+
+  function syncPlayIcon() {
+    $('#playIcon').innerHTML = playing
+      ? '<path d="M8 5h3.5v14H8zM12.5 5H16v14h-3.5z"/>'
+      : '<path d="M8 5.5v13l11-6.5-11-6.5z"/>';
+  }
+
+  /* ------------------------------------------------------------------ *
+   * UI sync
+   * ------------------------------------------------------------------ */
+  function syncAll() {
+    // mode
+    $$('#modeToggle .mode-btn').forEach(b => b.classList.toggle('is-active', b.dataset.mode === state.mode));
+    // chips
+    mark('#durationRow', 'dur', state.duration);
+    mark('#aspectRow', 'ar', state.aspect);
+    mark('#resRow', 'res', state.resolution);
+    mark('#cameraRow', 'cam', state.camera);
+    mark('#motionRow', 'motion', state.motion);
+    mark('#styleRow', 'style', state.style);
+    mark('#lightRow', 'light', state.lighting);
+    mark('#fpsRow', 'fps', state.fps);
+    mark('#qualityRow', 'quality', state.quality);
+
+    // duration hint
+    const hint = $('#durationHint');
+    if (state.duration === 30) {
+      hint.textContent = 'Continuous 30s sequence · 6 internal beats · one unbroken take';
+      hint.style.color = '#C9BBFF';
+    } else {
+      hint.textContent = 'Single continuous take';
+      hint.style.color = '';
+    }
+
+    // custom motion
+    $('#customMotionRow').style.display = state.motion === 'Custom' ? 'flex' : 'none';
+
+    // upload section wording
+    const isImg = state.mode === 'image';
+    $('#uploadLabel').textContent = isImg ? 'Reference image · start frame' : 'Reference image';
+    $('#uploadHint').textContent = isImg ? 'required · identity preserved' : 'optional · guides style';
+    $('#preserveList').style.display = isImg && state.images.length ? 'flex' : 'none';
+    $('#promptMode').textContent = isImg ? 'Image to Video' : 'Text to Video';
+    promptInput.placeholder = isImg
+      ? 'Describe the motion and camera move — e.g. “she turns her head slowly, hair moves in the breeze, camera pushes in”'
+      : 'Describe the scene: subject, action, environment, mood…';
+
+    // summary
+    $('#sumSpec').textContent = `${state.aspect} · ${state.resolution} · ${state.duration}s`;
+    $('#sumMeta').textContent = `${state.fps} fps · ${state.quality}${state.audio ? ' · Audio' : ''}`;
+    $('#hudSpec').textContent = `${state.aspect} · ${state.resolution} · ${state.duration}s`;
+
+    // thumbs
+    renderThumbs();
+
+    // transport
+    updateTransport();
+  }
+
+  function mark(sel, attr, value) {
+    $$(sel + ' [data-' + attr + ']').forEach(b =>
+      b.classList.toggle('is-active', String(b.dataset[attr]) === String(value)));
+  }
+
+  function renderThumbs() {
+    const wrap = $('#thumbs');
+    wrap.innerHTML = '';
+    state.images.forEach((img, i) => {
+      const d = document.createElement('div');
+      d.className = 'thumb';
+      const el = document.createElement('img');
+      el.src = img.url;
+      el.alt = img.name;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = '✕';
+      btn.title = 'Remove';
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        URL.revokeObjectURL(img.url);
+        state.images.splice(i, 1);
+        syncAll();
+      };
+      d.appendChild(el);
+      d.appendChild(btn);
+      wrap.appendChild(d);
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Prompt
+   * ------------------------------------------------------------------ */
+  function onPromptInput() {
+    state.prompt = promptInput.value;
+    $('#charCount').textContent = promptInput.value.length + ' / 2000';
+    if (promptInput.value.length > 2000) {
+      promptInput.value = promptInput.value.slice(0, 2000);
+      state.prompt = promptInput.value;
+      $('#charCount').textContent = '2000 / 2000';
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Prompt enhancement
+   * ------------------------------------------------------------------ */
+  function buildEnhancedPrompt(raw) {
+    const a = state.adv;
+    const [aw, ah] = state.aspect.split(':').map(Number);
+    const r = aw / ah;
+
+    const orientation = r > 1.15 ? 'landscape' : r < 0.87 ? 'vertical portrait' : 'square';
+    const lens = r > 2.1 ? '24mm anamorphic' : r < 0.9 ? '85mm short telephoto' : r < 1.1 ? '50mm prime' : '35mm spherical';
+    const shot = r > 2.1 ? 'Extreme wide establishing shot'
+              : r < 0.9 ? 'Medium close-up'
+              : 'Medium wide shot';
+
+    const motionLine = state.motion === 'Custom'
+      ? `Custom motion strength at ${$('#customMotion').value}% — motion is deliberate, physically motivated and never chaotic`
+      : `${state.motion} motion intensity — motion is deliberate, physically motivated and never chaotic`;
+
+    const continuity = state.duration >= 25
+      ? `One unbroken ${state.duration}-second sequence divided into ${Math.ceil(state.duration / 5)} internal beats. ` +
+        'Every beat must share the same character, wardrobe, location, lighting direction, lens and grade. ' +
+        'Transitions between beats are motivated by camera movement only — no cuts, no resets, no visual drift.'
+      : `One unbroken ${state.duration}-second take. The subject, wardrobe, location, lighting and grade remain identical ` +
+        'from the first frame to the last. No cuts, no scene changes, no visual drift.';
+
+    const lines = [];
+
+    if (state.mode === 'image' && state.images.length) {
+      lines.push('REFERENCE LOCK: The uploaded image is the start frame. Preserve the subject’s identity, facial ' +
+        'structure, skin tone, hairstyle, clothing, accessories, key props, environment and original composition. ' +
+        'Animate only the motion explicitly requested — do not redesign, restage or re-light the scene.');
+      lines.push('');
+    }
+
+    lines.push('SUBJECT: ' + raw);
+    lines.push('ACTION: The described action unfolds continuously and naturally, with believable weight, momentum and follow-through.');
+    lines.push('ENVIRONMENT: ' + (state.mode === 'image'
+      ? 'Exactly the environment present in the reference image — same layout, same objects, same spatial relationships.'
+      : 'A fully realised ' + orientation + ' environment consistent with the description, with layered foreground, midground and background depth.'));
+    lines.push('CHARACTER DETAILS: Preserve identity, facial structure, hairstyle, skin tone, wardrobe, accessories and props exactly as described or as shown in the reference — no redesign.');
+    lines.push('CAMERA: ' + state.camera);
+    lines.push('CAMERA MOVEMENT: ' + CAMERA_TEXT[state.camera]);
+    lines.push('SHOT SIZE: ' + shot);
+    lines.push('LENS: ' + lens + ', shallow-to-medium depth of field, natural bokeh, no distortion.');
+    lines.push('COMPOSITION: ' + ASPECT_COMP[state.aspect] + '. Rule-of-thirds staging, clean sightlines, no clutter.');
+    lines.push('LIGHTING: ' + state.lighting + ' — ' + LIGHT_TEXT[state.lighting] + '.');
+    lines.push('TIME OF DAY: ' + TOD_TEXT[state.lighting] + '.');
+    lines.push('WEATHER: Clear and consistent; atmospheric particles (dust, haze, pollen) only where physically plausible.');
+    lines.push('COLOR/ART DIRECTION: ' + ART_TEXT[state.style] + '.');
+    lines.push('MOTION: ' + motionLine + '.');
+    lines.push('PHYSICS: Gravity-consistent. Correct weight, inertia, cloth simulation, hair dynamics and contact shadows. Nothing floats or clips.');
+    lines.push('BACKGROUND: Depth-separated background with natural parallax; background elements stay stable and do not morph.');
+    lines.push('MOOD: ' + moodFor(state.style, state.lighting) + '.');
+    lines.push('TEMPORAL CONTINUITY: ' + continuity);
+    lines.push('NEGATIVE CONSTRAINTS: ' + (a.negative || DEFAULT_NEGATIVE));
+    lines.push('');
+    lines.push('[Model slot: Seedance 2.5 · ' + state.aspect + ' · ' + state.resolution + ' · ' + state.duration + 's · ' + state.fps + 'fps · seed ' + a.seed + ']');
+
+    return lines.join('\n');
+  }
+
+  function moodFor(style, light) {
+    const base = {
+      'Cinematic': 'elevated, emotional, filmic',
+      'Photorealistic': 'grounded, authentic, observational',
+      'Animation': 'playful, warm, expressive',
+      'Anime': 'energetic, stylised, high-emotion',
+      '3D': 'clean, precise, tactile',
+      'Documentary': 'honest, intimate, unforced',
+      'Music Video': 'bold, rhythmic, kinetic',
+      'Commercial': 'aspirational, crisp, polished',
+      'Fantasy': 'wondrous, mythic, atmospheric',
+      'Sci-Fi': 'cool, cerebral, awe-struck'
+    }[style] || 'cinematic';
+    const lift = { 'Golden Hour': ' and nostalgic', 'Dramatic': ' and tense', 'Neon': ' and electric',
+                   'Low Light': ' and mysterious', 'Volumetric': ' and ethereal' }[light] || '';
+    return base + lift;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Generation simulation
+   * ------------------------------------------------------------------ */
+  let genRAF = null;
+
+  function buildStages() {
+    const s = [];
+    s.push({ pct: 5,  label: 'Validating request' });
+    s.push({ pct: 11, label: 'Interpreting prompt structure' });
+    if (state.mode === 'image') s.push({ pct: 17, label: 'Locking reference identity & composition' });
+    const beats = state.duration >= 25 ? 6 : state.duration >= 15 ? 3 : 1;
+    for (let i = 1; i <= beats; i++) {
+      s.push({ pct: 20 + i * (50 / beats), label: beats > 1 ? `Composing keyframes · beat ${i}/${beats}` : 'Composing keyframes' });
+    }
+    s.push({ pct: 78, label: 'Solving motion & camera path' });
+    s.push({ pct: 87, label: 'Temporal continuity pass' });
+    s.push({ pct: 94, label: 'Upscale & color grade' });
+    s.push({ pct: 100, label: 'Encoding' });
+    return s;
+  }
+
+  function setGenLog(lines) {
+    const el = $('#genLog');
+    el.innerHTML = '';
+    lines.forEach(l => {
+      const d = document.createElement('div');
+      d.textContent = l;
+      el.appendChild(d);
+    });
+  }
+
+  function startGeneration(opts) {
+    opts = opts || {};
+    if (state.status === 'generating') return;
+
+    state.prompt = promptInput.value.trim();
+
+    if (!state.prompt) {
+      toast('Add a prompt before generating');
+      promptInput.focus();
+      return;
+    }
+    if (state.mode === 'image' && state.images.length === 0) {
+      toast('Image to Video needs a reference image');
+      return;
+    }
+
+    state.status = 'generating';
+    state.progress = 0;
+    playing = false;
+    syncPlayIcon();
+
+    previewEl.classList.add('is-generating');
+    $('#genOverlay').classList.add('is-on');
+    $('#emptyState').classList.remove('is-on');
+    $('#playerBar').classList.remove('is-on');
+    $('#resultActions').classList.remove('is-on');
+    generateBtn.disabled = true;
+    generateLabel.textContent = 'Generating…';
+    setGenLog([]);
+    $('#genBar').style.width = '0%';
+    $('#genPct').textContent = '0%';
+
+    const stages = buildStages();
+    const total = 4200 + state.duration * 105;
+    const start = performance.now();
+    let lastStage = -1;
+    const logLines = [];
+
+    if (genRAF) cancelAnimationFrame(genRAF);
+
+    function tick() {
+      const elapsed = performance.now() - start;
+      const p = Math.min(1, elapsed / total);
+      state.progress = p;
+
+      const pct = p * 100;
+      let idx = stages.findIndex(st => pct <= st.pct);
+      if (idx === -1) idx = stages.length - 1;
+
+      if (idx !== lastStage) {
+        lastStage = idx;
+        logLines.push(stages[idx].label);
+        setGenLog(logLines.slice(-3));
+      }
+
+      $('#genBar').style.width = (p * 100).toFixed(1) + '%';
+      $('#genPct').textContent = Math.round(p * 100) + '%';
+      $('#genStage').textContent = stages[idx].label;
+
+      if (p < 1) {
+        genRAF = requestAnimationFrame(tick);
+      } else {
+        finishGeneration(opts);
+      }
+    }
+    genRAF = requestAnimationFrame(tick);
+  }
+
+  function finishGeneration(opts) {
+    state.status = 'done';
+    previewEl.classList.remove('is-generating');
+    $('#genOverlay').classList.remove('is-on');
+    generateBtn.disabled = false;
+    generateLabel.textContent = 'Generate';
+    $('#playerBar').classList.add('is-on');
+    $('#resultActions').classList.add('is-on');
+    $('#emptyState').classList.remove('is-on');
+
+    playing = true;
+    playhead = 0;
+    syncPlayIcon();
+    updateTransport();
+
+    const job = {
+      id: 'r' + Date.now().toString(36),
+      prompt: state.prompt,
+      mode: state.mode,
+      duration: state.duration,
+      aspect: state.aspect,
+      resolution: state.resolution,
+      style: state.style,
+      lighting: state.lighting,
+      camera: state.camera,
+      motion: state.motion,
+      seed: state.adv.seed,
+      at: new Date()
+    };
+    history.unshift(job);
+    renderHistory();
+
+    layoutPreview();
+    toast(opts && opts.message ? opts.message : 'Render complete · ' + state.duration + 's sequence ready');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * History
+   * ------------------------------------------------------------------ */
+  function paletteGradient(style) {
+    const p = PALETTES[style] || PALETTES.Cinematic;
+    return `linear-gradient(135deg, ${p[1]}, ${p[2]} 55%, ${p[3]})`;
+  }
+
+  function renderHistory() {
+    const list = $('#historyList');
+    $('#historyCount').textContent = history.length + (history.length === 1 ? ' render' : ' renders');
+
+    if (!history.length) {
+      list.innerHTML = '<div class="history-empty">Nothing yet — your first render will appear here.</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    history.forEach(job => {
+      const b = document.createElement('button');
+      b.className = 'hcard';
+      b.type = 'button';
+      b.innerHTML = `
+        <div class="hthumb" style="background:${paletteGradient(job.style)}"></div>
+        <div class="hmeta">
+          <b>${escapeHtml(job.prompt).slice(0, 42) || 'Untitled'}</b>
+          <small>${job.aspect} · ${job.duration}s · ${job.resolution}</small>
+        </div>`;
+      b.onclick = () => loadJob(job);
+      list.appendChild(b);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function loadJob(job) {
+    state.mode = job.mode;
+    state.duration = job.duration;
+    state.aspect = job.aspect;
+    state.resolution = job.resolution;
+    state.style = job.style;
+    state.lighting = job.lighting;
+    state.camera = job.camera;
+    state.motion = job.motion;
+    state.adv.seed = job.seed;
+    promptInput.value = job.prompt;
+    onPromptInput();
+    $('#seedInput').value = job.seed;
+
+    state.status = 'done';
+    $('#emptyState').classList.remove('is-on');
+    $('#playerBar').classList.add('is-on');
+    $('#resultActions').classList.add('is-on');
+
+    playing = true;
+    playhead = 0;
+    syncPlayIcon();
+    syncAll();
+    layoutPreview();
+    toast('Loaded render from history');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Toasts
+   * ------------------------------------------------------------------ */
+  function toast(msg, opts) {
+    opts = opts || {};
+    const wrap = $('#toasts');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    const span = document.createElement('span');
+    span.textContent = msg;
+    t.appendChild(span);
+
+    if (opts.action) {
+      const btn = document.createElement('button');
+      btn.textContent = opts.action;
+      btn.onclick = () => {
+        if (opts.onAction) opts.onAction();
+        remove();
+      };
+      t.appendChild(btn);
+    }
+
+    wrap.appendChild(t);
+    const timer = setTimeout(remove, opts.duration || 3600);
+
+    function remove() {
+      clearTimeout(timer);
+      t.classList.add('out');
+      setTimeout(() => t.remove(), 240);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Modal
+   * ------------------------------------------------------------------ */
+  const MODALS = {
+    models: `
+      <h2>Model adapters</h2>
+      <p class="sub">Kinora runs a pluggable model layer. The interface stays the same as adapters are added.</p>
+
+      <div class="mrow">
+        <div class="badge">S2.5</div>
+        <div class="mrow-txt">
+          <b>Seedance 2.5</b>
+          <small>Text to video · Image to video · up to 30s · up to 1080p · audio-capable</small>
+        </div>
+        <span class="tag ok">Primary</span>
+      </div>
+
+      <div class="mrow disabled">
+        <div class="badge">+</div>
+        <div class="mrow-txt">
+          <b>Additional model slot</b>
+          <small>Reserved for future adapters — not configured in this build</small>
+        </div>
+        <span class="tag off">Empty</span>
+      </div>
+
+      <div class="note" style="margin-top:16px">
+        <b>Integration note.</b> This build is an interface demo. Generation is simulated locally in the browser —
+        no external endpoint is called and no model weights are bundled. The <code>Seedance 2.5</code> label is a
+        model slot in the adapter layer, not a claim about any vendor's private internals. Wire it to a live
+        integration only when an authorized Seedance 2.5 API is actually available to you.
+      </div>
+    `,
+    projects: `
+      <h2>Recent projects</h2>
+      <p class="sub">Every render in this session is grouped into a project workspace.</p>
+      <div class="proj-grid">
+        <div class="proj"><div class="pthumb" style="background:linear-gradient(135deg,#1b2f3a,#e8a44c)"></div>
+          <div class="pmeta"><b>Golden Hour Reel</b><small>12 renders · 16:9</small></div></div>
+        <div class="proj"><div class="pthumb" style="background:linear-gradient(135deg,#2a0040,#ff2e88)"></div>
+          <div class="pmeta"><b>Neon Nights</b><small>7 renders · 9:16</small></div></div>
+        <div class="proj"><div class="pthumb" style="background:linear-gradient(135deg,#0f2033,#00d9ff)"></div>
+          <div class="pmeta"><b>Sci-Fi Opens</b><small>4 renders · 21:9</small></div></div>
+        <div class="proj"><div class="pthumb" style="background:linear-gradient(135deg,#123a2c,#8ef0b0)"></div>
+          <div class="pmeta"><b>Fantasy Shorts</b><small>9 renders · 16:9</small></div></div>
+      </div>
+    `,
+    about: `
+      <h2>About Kinora</h2>
+      <p class="sub">A cinematic AI video studio interface, built for creators.</p>
+      <div class="note">
+        <b>Demo disclosure.</b> Kinora is an original interface prototype. All video previews are procedurally
+        generated abstract frames rendered in your browser — they are stand-ins for real model output, not
+        actual generations. Nothing is uploaded, stored or transmitted.
+        <br><br>
+        The workflow, controls and prompt-enhancement structure mirror how a real cinematic video model would be
+        driven, so the UI can be connected to an authorized backend without redesign.
+      </div>
+    `
+  };
+
+  function openModal(key) {
+    const body = $('#modalBody');
+    body.innerHTML = MODALS[key] || '';
+    $('#modal').classList.add('is-open');
+  }
+  function closeModal() {
+    $('#modal').classList.remove('is-open');
+  }
+  $('#modalClose').onclick = closeModal;
+  $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — navigation
+   * ------------------------------------------------------------------ */
+  $$('[data-nav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.nav;
+      if (key === 'studio') {
+        $$('.rail-btn').forEach(b => b.classList.toggle('is-active', b.dataset.nav === 'studio'));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (key === 'history') {
+        $('#historyStrip').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        toast('Recent renders & projects are listed below the player');
+        return;
+      }
+      $$('.rail-btn').forEach(b => b.classList.toggle('is-active', b.dataset.nav === key));
+      openModal(key);
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — mode
+   * ------------------------------------------------------------------ */
+  $$('#modeToggle .mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.mode = btn.dataset.mode;
+      syncAll();
+      if (state.mode === 'image') {
+        toast('Image to Video — upload a start frame to begin');
+      }
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — prompt
+   * ------------------------------------------------------------------ */
+  promptInput.addEventListener('input', onPromptInput);
+
+  $('#enhanceBtn').addEventListener('click', () => {
+    const raw = promptInput.value.trim();
+    if (!raw) {
+      toast('Write a short idea first, then enhance it');
+      promptInput.focus();
+      return;
+    }
+    const prev = promptInput.value;
+    const wasEnhanced = promptInput.classList.contains('enhanced');
+    promptInput.value = buildEnhancedPrompt(raw);
+    promptInput.classList.add('enhanced');
+    onPromptInput();
+    toast('Prompt expanded into a structured cinematic instruction', {
+      action: 'Undo',
+      duration: 5200,
+      onAction: () => {
+        promptInput.value = prev;
+        if (!wasEnhanced) promptInput.classList.remove('enhanced');
+        onPromptInput();
+      }
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — image upload
+   * ------------------------------------------------------------------ */
+  const dropzone = $('#dropzone');
+  const fileInput = $('#fileInput');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', e => {
+    addFiles(e.target.files);
+    fileInput.value = '';
+  });
+
+  ['dragenter', 'dragover'].forEach(ev =>
+    dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('is-drag'); }));
+  ['dragleave', 'drop'].forEach(ev =>
+    dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('is-drag'); }));
+  dropzone.addEventListener('drop', e => {
+    if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+  });
+
+  function addFiles(files) {
+    const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!arr.length) return;
+    arr.slice(0, 10 - state.images.length).forEach(f => {
+      state.images.push({ name: f.name, url: URL.createObjectURL(f) });
+    });
+    if (state.mode === 'text' && state.images.length) {
+      state.mode = 'image';
+      toast('Reference added — switched to Image to Video');
+    }
+    syncAll();
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — chip groups
+   * ------------------------------------------------------------------ */
+  function bindGroup(sel, attr, apply) {
+    $$(sel + ' [data-' + attr + ']').forEach(btn => {
+      btn.addEventListener('click', () => {
+        apply(btn.dataset[attr], btn);
+        syncAll();
+      });
+    });
+  }
+
+  bindGroup('#durationRow', 'dur', v => { state.duration = Number(v); });
+  bindGroup('#aspectRow', 'ar', v => { state.aspect = v; layoutPreview(); });
+  bindGroup('#resRow', 'res', v => { state.resolution = v; });
+  bindGroup('#cameraRow', 'cam', v => { state.camera = v; });
+  bindGroup('#motionRow', 'motion', v => { state.motion = v; });
+  bindGroup('#styleRow', 'style', v => { state.style = v; draw(performance.now()); });
+  bindGroup('#lightRow', 'light', v => { state.lighting = v; draw(performance.now()); });
+  bindGroup('#fpsRow', 'fps', v => { state.fps = Number(v); });
+  bindGroup('#qualityRow', 'quality', v => { state.quality = v; });
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — advanced
+   * ------------------------------------------------------------------ */
+  $('#advToggle').addEventListener('click', () => {
+    $('#advToggle').classList.toggle('is-open');
+    $('#advBody').classList.toggle('is-open');
+  });
+
+  function paintRange(input) {
+    const min = Number(input.min) || 0;
+    const max = Number(input.max) || 100;
+    const v = Number(input.value);
+    const p = ((v - min) / (max - min)) * 100;
+    input.style.background =
+      `linear-gradient(90deg,#7C5CFF 0%,#A78BFA ${p}%,rgba(255,255,255,.1) ${p}%,rgba(255,255,255,.1) 100%)`;
+  }
+
+  $$('[data-slider]').forEach(input => {
+    paintRange(input);
+    input.addEventListener('input', () => {
+      const key = input.dataset.slider;
+      state.adv[key] = Number(input.value);
+      const out = document.querySelector(`[data-val="${key}"]`);
+      if (out) out.textContent = input.value;
+      paintRange(input);
+    });
+  });
+
+  const customMotion = $('#customMotion');
+  paintRange(customMotion);
+  customMotion.addEventListener('input', () => {
+    $('#customMotionVal').textContent = customMotion.value;
+    state.adv.motionStrength = Number(customMotion.value);
+    paintRange(customMotion);
+  });
+
+  $('#seedInput').addEventListener('input', e => {
+    state.adv.seed = Number(e.target.value) || 0;
+  });
+  $('#seedDice').addEventListener('click', () => {
+    const v = Math.floor(Math.random() * 999999);
+    state.adv.seed = v;
+    $('#seedInput').value = v;
+    toast('Seed randomized · ' + v);
+  });
+
+  negativeInput.value = DEFAULT_NEGATIVE;
+  negativeInput.addEventListener('input', () => {
+    state.adv.negative = negativeInput.value;
+  });
+
+  const audioSwitch = $('#audioSwitch');
+  audioSwitch.addEventListener('click', () => {
+    state.audio = !state.audio;
+    audioSwitch.classList.toggle('is-on', state.audio);
+    syncAll();
+  });
+
+  $$('[data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tool === 'extend') doExtend();
+      else doContinue();
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — player
+   * ------------------------------------------------------------------ */
+  $('#playBtn').addEventListener('click', () => {
+    if (state.status !== 'done') return;
+    if (playhead >= state.duration) playhead = 0;
+    playing = !playing;
+    syncPlayIcon();
+  });
+
+  const timeline = $('#timeline');
+  function scrubFromEvent(e) {
+    if (state.status !== 'done') return;
+    const rect = timeline.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const p = Math.max(0, Math.min(1, x / rect.width));
+    playhead = p * state.duration;
+    updateTransport();
+    draw(performance.now());
+  }
+  let scrubbing = false;
+  timeline.addEventListener('pointerdown', e => {
+    scrubbing = true;
+    timeline.setPointerCapture(e.pointerId);
+    scrubFromEvent(e);
+  });
+  timeline.addEventListener('pointermove', e => { if (scrubbing) scrubFromEvent(e); });
+  timeline.addEventListener('pointerup', e => { scrubbing = false; });
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — result actions
+   * ------------------------------------------------------------------ */
+  $$('[data-act]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const act = btn.dataset.act;
+      if (act === 'regenerate') {
+        startGeneration({ message: 'Regenerated with the same seed' });
+      } else if (act === 'edit') {
+        promptInput.focus();
+        promptInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        toast('Edit your prompt, then generate again');
+      } else if (act === 'extend') {
+        doExtend();
+      } else if (act === 'variation') {
+        const v = Math.floor(Math.random() * 999999);
+        state.adv.seed = v;
+        $('#seedInput').value = v;
+        startGeneration({ message: 'Creating a variation · new seed ' + v });
+      } else if (act === 'download') {
+        downloadStill();
+      } else if (act === 'another') {
+        resetToIdle();
+      }
+    });
+  });
+
+  function doExtend() {
+    if (state.status === 'generating') return;
+    if (state.duration >= 30) {
+      toast('30s is the maximum duration for Seedance 2.5');
+      return;
+    }
+    state.duration = Math.min(30, state.duration + 5);
+    syncAll();
+    startGeneration({ message: 'Extended to ' + state.duration + 's · continuity preserved' });
+  }
+
+  function doContinue() {
+    if (state.status === 'generating') return;
+    if (!state.prompt.trim()) {
+      toast('Add a prompt first');
+      return;
+    }
+    startGeneration({ message: 'Continuing the scene from the final frame' });
+  }
+
+  function downloadStill() {
+    try {
+      const link = document.createElement('a');
+      link.download = 'kinora-preview-' + Date.now() + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast('Poster frame saved · a live build would export MP4 (H.264)');
+    } catch (err) {
+      toast('Export unavailable in this demo');
+    }
+  }
+
+  function resetToIdle() {
+    if (genRAF) cancelAnimationFrame(genRAF);
+    state.status = 'idle';
+    state.progress = 0;
+    playing = false;
+    playhead = 0;
+    syncPlayIcon();
+    previewEl.classList.remove('is-generating');
+    $('#genOverlay').classList.remove('is-on');
+    $('#playerBar').classList.remove('is-on');
+    $('#resultActions').classList.remove('is-on');
+    $('#emptyState').classList.add('is-on');
+    $('#genBar').style.width = '0%';
+    generateBtn.disabled = false;
+    generateLabel.textContent = 'Generate';
+    promptInput.value = '';
+    promptInput.classList.remove('enhanced');
+    onPromptInput();
+    updateTransport();
+    promptInput.focus();
+    toast('Ready for a new render');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Wiring — generate
+   * ------------------------------------------------------------------ */
+  generateBtn.addEventListener('click', () => startGeneration());
+
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      startGeneration();
+    }
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Boot
+   * ------------------------------------------------------------------ */
+  const ro = new ResizeObserver(() => layoutPreview());
+  ro.observe(previewFrame);
+  window.addEventListener('resize', layoutPreview);
+
+  onPromptInput();
+  syncAll();
+  renderHistory();
+  layoutPreview();
+  requestAnimationFrame(loop);
+
+  // Slight delay so the layout settles before first paint
+  setTimeout(layoutPreview, 60);
+  setTimeout(() => {
+    toast('Kinora Studio ready — interface demo, renders are simulated', { duration: 4200 });
+  }, 900);
+})();
+</script>
+</body>
+</html>
